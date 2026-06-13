@@ -1,0 +1,34 @@
+{
+  "name": "india-reg-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Indian financial regulations — RBI & SEBI circulars, master directions, notifications. Searchable, cited, no API keys.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "india-reg-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "sync": "tsx src/scrapers/run-sync.ts",
+    "inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "better-sqlite3": "12.10.0",
+    "cheerio": "1.2.0",
+    "p-limit": "7.3.0",
+    "pdf-parse": "2.4.5",
+    "turndown": "7.2.4",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "0.22.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "25.9.3",
+    "@types/turndown": "^5.0.6",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3"
+  }
+}
