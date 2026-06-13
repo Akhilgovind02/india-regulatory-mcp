@@ -1,18 +1,46 @@
 {
   "name": "india-reg-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for Indian financial regulations — RBI & SEBI circulars, master directions, notifications. Searchable, cited, no API keys.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "india-reg-mcp": "./dist/index.js"
   },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "india",
+    "rbi",
+    "sebi",
+    "regulations",
+    "circulars",
+    "compliance",
+    "fintech",
+    "claude"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Akhilgovind02/india-regulatory-mcp.git"
+  },
+  "homepage": "https://github.com/Akhilgovind02/india-regulatory-mcp",
+  "mcpName": "io.github.Akhilgovind02/india-regulatory-mcp",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
+    "postbuild": "node scripts/add-shebang.mjs",
     "dev": "tsx src/index.ts",
     "sync": "tsx src/scrapers/run-sync.ts",
     "inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

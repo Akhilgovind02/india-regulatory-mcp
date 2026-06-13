@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Akhilgovind02/india-regulatory-mcp",
+  "description": "Search RBI & SEBI circulars, master directions and regulations. Offline SQLite index, no API keys.",
+  "repository": {
+    "url": "https://github.com/Akhilgovind02/india-regulatory-mcp",
+    "source": "github"
+  },
+  "version": "1.0.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "india-reg-mcp",
+      "version": "1.0.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [],
+      "environmentVariables": []
+    }
+  ]
+}
