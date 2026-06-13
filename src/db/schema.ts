@@ -36,7 +36,10 @@ export function initSchema() {
       tokenize='porter unicode61'
     );
 
-    CREATE TRIGGER IF NOT EXISTS documents_ai AFTER INSERT ON documents BEGIN
+    DROP TRIGGER IF EXISTS documents_ai;
+
+    CREATE TRIGGER documents_ai AFTER INSERT ON documents BEGIN
+      INSERT INTO documents_fts(documents_fts, rowid, title, body) VALUES ('delete', new.rowid, new.title, new.body);
       INSERT INTO documents_fts(rowid, title, body) VALUES (new.rowid, new.title, new.body);
     END;
     CREATE TRIGGER IF NOT EXISTS documents_ad AFTER DELETE ON documents BEGIN

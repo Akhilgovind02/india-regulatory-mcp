@@ -48,6 +48,7 @@ export function searchDocs(opts: {
   docType?: string;
   limit?: number;
 }): (DocRow & { snippet: string })[] {
+  if (!opts.query.trim()) return [];
   const limit = opts.limit ?? 10;
   let sql = `
     SELECT d.*, snippet(documents_fts, 1, '<<', '>>', ' … ', 16) AS snippet
@@ -98,5 +99,7 @@ export function setSyncMeta(key: string, value: string) {
 }
 
 function escapeFts(q: string): string {
-  return q.trim().split(/\s+/).map((w) => `"${w.replace(/"/g, '')}"`).join(" ");
+  const trimmed = q.trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/).map((w) => `"${w.replace(/"/g, '')}"`).join(" ");
 }

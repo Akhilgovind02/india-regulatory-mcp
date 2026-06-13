@@ -53,7 +53,8 @@ async function fetchSebiBody(sourceUrl: string): Promise<{ body: string; pdfUrl:
   }
 }
 
-const updateStmt = db.prepare("UPDATE documents SET body=@body, pdf_url=@pdf_url, indexed_at=@indexed_at WHERE id=@id");
+const updateStmt     = db.prepare("UPDATE documents SET body=@body, pdf_url=@pdf_url, indexed_at=@indexed_at WHERE id=@id");
+const updateBodyOnly = db.prepare("UPDATE documents SET body=@body, indexed_at=@indexed_at WHERE id=@id");
 
 // Get all docs with empty body
 interface DocRecord { id: string; regulator: string; source_url: string; }
@@ -80,7 +81,11 @@ await Promise.all(
         pdfUrl = result.pdfUrl;
       }
 
-      updateStmt.run({ id: doc.id, body, pdf_url: pdfUrl, indexed_at: new Date().toISOString() });
+      if (doc.regulator === "RBI") {
+        updateBodyOnly.run({ id: doc.id, body, indexed_at: new Date().toISOString() });
+      } else {
+        updateStmt.run({ id: doc.id, body, pdf_url: pdfUrl, indexed_at: new Date().toISOString() });
+      }
       done++;
       if (done % 20 === 0) log(`Progress: ${done}/${docs.length} done`);
     } catch (e: unknown) {

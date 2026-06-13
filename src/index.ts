@@ -123,17 +123,20 @@ server.tool(
 server.tool(
   "sync_latest",
   "Refresh the regulatory index by scraping the latest documents from RBI and SEBI. " +
-  "Run this to pull in newly published circulars. Incremental — only fetches documents not already indexed. " +
-  "Note: takes 1-3 minutes as it politely scrapes the regulators' sites.",
+  "Run this to pull in newly published circulars, master circulars, and regulations. Incremental — only fetches documents not already indexed. " +
+  "Note: takes 2-5 minutes as it politely scrapes the regulators' sites.",
   {
     months_back: z.number().default(2).describe("How many months of RBI history to check (default 2 for incremental refresh)"),
-    sebi_pages: z.number().default(3).describe("How many SEBI listing pages to check (default 3 = ~75 recent circulars)"),
+    sebi_pages: z.number().default(3).describe("How many SEBI listing pages to check per section (default 3 = ~75 recent docs per section)"),
   },
   async ({ months_back, sebi_pages }) => {
     try {
       const log: string[] = [];
       const rbiCount = await syncRbi(months_back, (m) => log.push(m));
-      const sebiCount = await syncSebi(7, sebi_pages, (m) => log.push(m));
+      const sebiCirc   = await syncSebi(7, sebi_pages, (m) => log.push(m));
+      const sebiMaster = await syncSebi(6, sebi_pages, (m) => log.push(m));
+      const sebiReg    = await syncSebi(3, sebi_pages, (m) => log.push(m));
+      const sebiCount  = sebiCirc + sebiMaster + sebiReg;
       q.setSyncMeta("last_sync", new Date().toISOString());
       return ok({
         message: "Sync complete.",

@@ -82,6 +82,7 @@ export async function scrapeRbiMonth(year: number, month: number, tokens?: Views
       const href = titleLink.attr("href") || "";
       const idMatch = href.match(/Id=(\d+)/);
       if (!idMatch) return;
+      if (!currentDate) return; // skip rows before the first date header
       const pdfLink = $tr.find('a[href*=".PDF"], a[href*=".pdf"]').first();
       items.push({
         id: `rbi:${idMatch[1]}`,
@@ -158,6 +159,7 @@ function classifyRbi(title: string): string {
   if (t.includes("master direction")) return "master_direction";
   if (t.includes("master circular")) return "master_circular";
   if (t.includes("regulations")) return "regulation";
+  if (t.includes("circular")) return "circular";
   return "notification";
 }
 

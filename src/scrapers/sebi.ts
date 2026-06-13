@@ -35,19 +35,9 @@ function parseListItems($: ReturnType<typeof cheerio.load>): SebiListItem[] {
   return items;
 }
 
+// Pages 1+: AJAX POST to getnewslistinfo.jsp (page 0 handled in syncSebi)
 async function getSebiPage(ssid: number, pageIndex: number, jsessionid: string): Promise<SebiListItem[]> {
-  if (pageIndex === 0) {
-    // First page: GET request (also establishes session)
-    const url = `${SEBI_LIST_BASE}${ssid}&smid=0&nextValue=0`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": UA, "Accept": "text/html,*/*" },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`SEBI GET failed: HTTP ${res.status}`);
-    return parseListItems(cheerio.load(await res.text()));
-  }
-
-  // Pages 2+: AJAX POST to getnewslistinfo.jsp
+  // Pages 1+: AJAX POST to getnewslistinfo.jsp
   const body = new URLSearchParams({
     nextValue: "1",
     next: "n",
@@ -75,16 +65,6 @@ async function getSebiPage(ssid: number, pageIndex: number, jsessionid: string):
   });
   if (!res.ok) throw new Error(`SEBI AJAX failed: HTTP ${res.status}`);
   return parseListItems(cheerio.load(await res.text()));
-}
-
-async function getSebiSession(ssid: number): Promise<string> {
-  const url = `${SEBI_LIST_BASE}${ssid}&smid=0&nextValue=0`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": UA, "Accept": "text/html,*/*" },
-    signal: AbortSignal.timeout(30_000),
-  });
-  const cookie = res.headers.get("set-cookie") || "";
-  return cookie.match(/JSESSIONID=([^;]+)/)?.[1] ?? "";
 }
 
 async function fetchSebiBody(item: SebiListItem): Promise<{ body: string; pdfUrl: string | null }> {
@@ -116,25 +96,35 @@ async function fetchSebiBody(item: SebiListItem): Promise<{ body: string; pdfUrl
   }
 }
 
+const SSID_DOC_TYPE: Record<number, string> = { 6: "master_circular", 3: "regulation" };
+const SSID_DEPARTMENT: Record<number, string> = { 6: "Master Circulars", 3: "Regulations", 7: "Circulars" };
+
 export async function syncSebi(ssid: number, maxPages: number, onProgress?: (m: string) => void): Promise<number> {
-  const jsessionid = await getSebiSession(ssid);
+  // Page 0: single GET that both establishes the session and returns first page listings
+  const url = `${SEBI_LIST_BASE}${ssid}&smid=0&nextValue=0`;
+  const page0Res = await fetch(url, {
+    headers: { "User-Agent": UA, "Accept": "text/html,*/*" },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!page0Res.ok) throw new Error(`SEBI GET failed: HTTP ${page0Res.status}`);
+  const cookie = page0Res.headers.get("set-cookie") || "";
+  const jsessionid = cookie.match(/JSESSIONID=([^;]+)/)?.[1] ?? "";
+  if (!jsessionid) throw new Error("SEBI: failed to obtain JSESSIONID — session cookie absent from page-0 response");
+
+  const doc_type = SSID_DOC_TYPE[ssid] ?? "circular";
+  const department = SSID_DEPARTMENT[ssid] ?? "Circulars";
   let total = 0;
 
-  for (let page = 0; page < maxPages; page++) {
-    const items = await getSebiPage(ssid, page, jsessionid);
-    if (!items.length) break;
-    onProgress?.(`SEBI ssid=${ssid} page ${page}: ${items.length} docs`);
-
+  const processPage = async (items: SebiListItem[]) => {
+    if (!items.length) return false;
     const newItems = items.filter((it) => !docExists(it.id));
-
     const rows: DocRow[] = await Promise.all(
       newItems.map((it) => limit(async () => {
         const { body, pdfUrl } = await fetchSebiBody(it);
         await sleep(300);
         return {
           id: it.id, regulator: "SEBI",
-          doc_type: ssid === 6 ? "master_circular" : ssid === 3 ? "regulation" : "circular",
-          title: it.title, date: it.date, department: null,
+          doc_type, title: it.title, date: it.date, department,
           source_url: it.url, pdf_url: pdfUrl, body,
           indexed_at: new Date().toISOString(),
         } as DocRow;
@@ -143,6 +133,18 @@ export async function syncSebi(ssid: number, maxPages: number, onProgress?: (m: 
     if (rows.length) upsertMany(rows);
     total += rows.length;
     await sleep(500);
+    return true;
+  };
+
+  const page0Items = parseListItems(cheerio.load(await page0Res.text()));
+  onProgress?.(`SEBI ssid=${ssid} page 0: ${page0Items.length} docs`);
+  await processPage(page0Items);
+
+  for (let page = 1; page < maxPages; page++) {
+    const items = await getSebiPage(ssid, page, jsessionid);
+    if (!items.length) break;
+    onProgress?.(`SEBI ssid=${ssid} page ${page}: ${items.length} docs`);
+    await processPage(items);
   }
   return total;
 }
