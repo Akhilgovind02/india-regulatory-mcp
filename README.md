@@ -73,10 +73,41 @@ RBI / SEBI websites
 
 ### Prerequisites
 
-- Node.js 22 LTS or higher
-- Claude Desktop or Claude Code CLI
+- Node.js 18+ 
+- Claude Code CLI or Claude Desktop
 
-### Setup
+---
+
+### Option A — npm (recommended)
+
+Install globally and register with Claude Code in one step:
+
+```bash
+npm install -g india-reg-mcp
+claude mcp add -s user india-reg india-reg-mcp
+```
+
+Or use without installing via `npx`:
+
+```bash
+claude mcp add -s user india-reg npx india-reg-mcp
+```
+
+#### First-run sync
+
+After adding the server, ask Claude to sync:
+```
+Run sync_latest to populate the index
+```
+
+Or run directly:
+```bash
+npx india-reg-mcp  # starts the MCP server
+```
+
+---
+
+### Option B — from source
 
 ```bash
 git clone https://github.com/Akhilgovind02/india-regulatory-mcp.git
@@ -85,7 +116,7 @@ npm install
 npm run build
 ```
 
-### First-run sync (populates the database)
+#### First-run sync (populates the database)
 
 ```bash
 npm run sync
@@ -109,6 +140,17 @@ Progress is printed to stderr:
 
 ### Claude Code (CLI)
 
+**Via npm (global install):**
+```bash
+claude mcp add -s user india-reg india-reg-mcp
+```
+
+**Via npx (no install):**
+```bash
+claude mcp add -s user india-reg npx india-reg-mcp
+```
+
+**Via source build:**
 ```bash
 claude mcp add -s user india-reg node /ABSOLUTE/PATH/TO/india-regulatory-mcp/dist/index.js
 ```
@@ -118,8 +160,8 @@ Or add to `~/.claude.json` manually:
 {
   "mcpServers": {
     "india-reg": {
-      "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/india-regulatory-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["india-reg-mcp"]
     }
   }
 }
@@ -133,8 +175,8 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
 {
   "mcpServers": {
     "india-reg": {
-      "command": "node",
-      "args": ["C:\\ABSOLUTE\\PATH\\TO\\india-regulatory-mcp\\dist\\index.js"]
+      "command": "npx",
+      "args": ["india-reg-mcp"]
     }
   }
 }
